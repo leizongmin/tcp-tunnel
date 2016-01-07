@@ -3,6 +3,8 @@
 
 ## 安装
 
+**要求系统已安装`Node.js v4.0`或以上版本**
+
 ```bash
 $ npm install tcp-tunnel -g
 ```
@@ -17,7 +19,7 @@ $ npm install tcp-tunnel -g
 
 ## 配置
 
-文件`config.conf`
+服务器端配置文件`server_config.conf`：
 
 ```
 # 客户端名称及密码
@@ -34,16 +36,25 @@ B:123456
 6379 -> B:6379
 ```
 
+客户端配置文件`client_config.conf`：
+
+```
+:data
+name =     A
+password = 123456
+server =   192.168.9.10
+```
+
 ## 启动客户端
 
 ```bash
-$ tcp-tunnel-client -n A -p 123456
+$ tcp-tunnel-client -c client_config.conf
 ```
 
 ## 启动服务端
 
 ```bash
-$ tcp-tunnel-server -c config.conf
+$ tcp-tunnel-server -c server_config.conf
 ```
 
 ## License
