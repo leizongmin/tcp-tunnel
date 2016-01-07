@@ -6,11 +6,12 @@
  * @author Zongmin Lei <leizongmin@gmail.com>
  */
 
+const EventEmitter = require('events');
 const socket = require('clouds-socket');
 const utils = require('../lib/utils');
 
 
-class TCPTunnelServer {
+class TCPTunnelServer extends EventEmitter {
 
   /**
    * start server
@@ -82,7 +83,5 @@ class TCPTunnelServer {
   }
 
 }
-
-utils.inheritsEventEmitter(TCPTunnelServer);
 
 module.exports = TCPTunnelServer;
