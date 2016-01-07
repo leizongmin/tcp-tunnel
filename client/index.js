@@ -10,6 +10,7 @@ const EventEmitter = require('events');
 const socket = require('clouds-socket');
 const utils = require('../lib/utils');
 const debug = utils.debug('client');
+const TCPTunnelClientProxy = require('./proxy');
 
 
 class TCPTunnelClient extends EventEmitter {
@@ -68,6 +69,7 @@ class TCPTunnelClient extends EventEmitter {
       // send handshake
       this._server.isVerified = false;
       this._server.send(utils.signJSON(options.password, {
+        type: 'verify',
         name: options.name,
         message: 'hey guy!',
       }));
@@ -84,9 +86,35 @@ class TCPTunnelClient extends EventEmitter {
         this.emit('server verified');
       }
 
-      if (d.message) {
+      if (d.type === 'message') {
         debug('server message: %s', d.message);
         this.emit('server message', d.message, d);
+        return;
+      }
+
+      if (d.type === 'new_session') {
+        debug('new session: session=%s, localPort=%s, remotePort=%s', d.session, d.localPort, d.remotePort);
+
+        // setup proxy
+        const proxy = new TCPTunnelClientProxy({
+          localPort: d.localPort,
+          remotePort: d.remotePort,
+          remoteHost: options.host,
+        });
+        proxy.once('error', (err, conn) => {
+          debug('session error: id=%s, error=%s client { host=%s, port=%s }',
+                d.session, err, conn.remoteAddress, conn.remotePort);
+        });
+        proxy.once('close', conn => {
+          debug('session close: id=%s client { host=%s, port=%s }',
+                d.session, conn.remoteAddress, conn.remotePort);
+        });
+
+        // verify session
+        proxy.remote.write(utils.signJSON(options.password, {
+          session: d.session,
+        }));
+
         return;
       }
 

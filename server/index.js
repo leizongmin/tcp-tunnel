@@ -62,14 +62,15 @@ class TCPTunnelServer extends EventEmitter {
 
       // add to session agent
       const sid = utils.generateSessionId();
-      this._agent.add(sid, conn);
+      this._agent.add(sid, client.password, conn);
 
       // tell client to connect to agent server
       const info = this.lookupClientInfoByPort(port);
       client.send(utils.signJSON(client.password, {
+        type: 'new_session',
         session: sid,
         localPort: info.port,
-        serverPort: this._agent.getListenPort(),
+        remotePort: this._agent.getListenPort(),
       }));
 
     });
@@ -141,7 +142,10 @@ class TCPTunnelServer extends EventEmitter {
           c.password = p;
           this._tmpClients.delete(c.id);
           this._clients.set(c.name, c);
-          c.send(utils.signJSON(c.password, {message: 'connected! good job'}));
+          c.send(utils.signJSON(c.password, {
+            type: 'message',
+            message: 'connected! good job',
+          }));
           this.emit('client connected', c);
           debug('client{id=%s} verified: name=%s, message=%s', c.name, d.message);
 
