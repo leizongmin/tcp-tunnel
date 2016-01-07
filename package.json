@@ -6,6 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": {
+    "ttserver": "./bin/server",
+    "ttclient": "./bin/client"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/leizongmin/tcp-tunnel.git"

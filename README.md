@@ -19,7 +19,7 @@ $ npm install tcp-tunnel -g
 
 ## 配置
 
-服务器端配置文件`server_config.conf`：
+服务器端配置文件`server.conf`：
 
 ```
 # 客户端名称及密码
@@ -36,7 +36,7 @@ B:123456
 6379 -> B:6379
 ```
 
-客户端配置文件`client_config.conf`：
+客户端配置文件`client.conf`：
 
 ```
 :data
@@ -48,13 +48,13 @@ server =   192.168.9.10
 ## 启动客户端
 
 ```bash
-$ tcp-tunnel-client -c client_config.conf
+$ ttclient -c client.conf
 ```
 
 ## 启动服务端
 
 ```bash
-$ tcp-tunnel-server -c server_config.conf
+$ ttserver -c server.conf
 ```
 
 ## License
