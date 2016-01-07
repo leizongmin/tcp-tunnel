@@ -33,30 +33,52 @@ class TCPTunnelServerPortManager extends EventEmitter {
   getPort(port) {
     port = Number(port);
     let s = this._portsMap.get(port);
+
     if (s) {
+
       debug('createPort: port=%s { already exists }', port);
       return s;
+
     } else {
+
       debug('createPort: port=%s { new }', port);
       s = net.createServer();
       s.listen(port);
       this._portsMap.set(port, s);
+
+      s.on('connection', c => {
+        debug('new connection: port=%s, remote { host=%s, port=%s }', port, c.remoteAddress, c.remotePort);
+        this.emit('connection', port, c, s);
+        c.once('close', _ => {
+          debug('connection close: port=%s, remote { host=%s, port=%s }', port, c.remoteAddress, c.remotePort);
+        });
+      });
+
+      s.on('error', err => {
+        debug('port error: port=%s, error=%s', port, err);
+        this.emit('port error', port, err, s);
+      });
+
+      s.on('close', _ => {
+        debug('port close: port=%s', port);
+        this.emit('port close', port, a);
+      });
+
     }
   }
 
   /**
    * reset ports
    *
-   * @param {Array} ports
+   * @param {Array} ports format: [5001, 5002]
    */
   reset(ports) {
     if (!Array.isArray(ports)) throw new Error(`invalid argument: ports`);
 
     // create new ports map
     const portsMap = new Map();
-    for (const item of ports) {
-      const p = this.getPort(item.port);
-      portsMap.set(item.port, p);
+    for (const port of ports) {
+      portsMap.set(port, this.getPort(port));
     }
 
     // close old ports

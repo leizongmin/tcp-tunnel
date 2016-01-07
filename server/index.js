@@ -36,10 +36,27 @@ class TCPTunnelServer extends EventEmitter {
       this._clientsPassword.set(n, options.clients[n]);
     }
 
+    //--------------------------------------------------------------------------
+
     // ports
     if (!Array.isArray(options.ports)) throw new Error(`missing config: ports`);
+    this._clientsInfodPortMap = new Map();
+    options.ports.forEach(item => this._clientsInfodPortMap.set(item.port, item.client));
+    // ports manager
     this._ports = new TCPTunnelServerPortManager();
-    this._ports.reset(options.ports);
+    this._ports.reset(options.ports.map(item => item.port));
+
+    this._ports.on('connection', (port, conn, server) => {
+      const client = this.lookupClientByPort(port);
+      if (!client) {
+        debug('connection{port=%s}: close { no client online }', port);
+        conn.destroy();
+        return;
+      }
+      debug('connection{port=%s}: client=%s', port, client.name);
+    });
+
+    //--------------------------------------------------------------------------
 
     options.port = Number(options.port);
     if (isNaN(options.port)) throw new Error(`invalid port: ${options.port}`);
@@ -125,7 +142,21 @@ class TCPTunnelServer extends EventEmitter {
 
     });
 
+    //--------------------------------------------------------------------------
     debug('created: server { host=%s, port=%s }', options.host, options.port);
+  }
+
+  lookupClientByName(name) {
+    return this._clients.get(name) || false;
+  }
+
+  lookupClientByPort(port) {
+    return this.lookupClientByName(this.lookupClientNameByPort(port));
+  }
+
+  lookupClientNameByPort(port) {
+    const c = this._clientsInfodPortMap.get(port);
+    return (c && c.name) || false;
   }
 
   /**
