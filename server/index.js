@@ -10,6 +10,7 @@ const EventEmitter = require('events');
 const socket = require('clouds-socket');
 const utils = require('../lib/utils');
 const debug = utils.debug('server');
+const TCPTunnelServerPortManager = require('./ports');
 
 
 class TCPTunnelServer extends EventEmitter {
@@ -21,17 +22,24 @@ class TCPTunnelServer extends EventEmitter {
    *   - {String} host, defaults to 0.0.0.0
    *   - {Number} port, required
    *   - {Object} clients, format: {name1: password1, name2: password2}
+   *   - {Object} ports, format: [{port: server_port, client: {name: clientName, port: clientPort}}, ...]
    */
   constructor(options) {
     super();
 
     this._options = options = options || {};
 
+    // clients
     if (!options.clients) throw new Error(`missing config: clients`);
     this._clientsPassword = new Map();
     for (const n in options.clients) {
       this._clientsPassword.set(n, options.clients[n]);
     }
+
+    // ports
+    if (!Array.isArray(options.ports)) throw new Error(`missing config: ports`);
+    this._ports = new TCPTunnelServerPortManager();
+    this._ports.reset(options.ports);
 
     options.port = Number(options.port);
     if (isNaN(options.port)) throw new Error(`invalid port: ${options.port}`);
