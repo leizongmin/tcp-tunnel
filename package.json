@@ -1,0 +1,32 @@
+{
+  "name": "tcp-tunnel",
+  "version": "0.0.1",
+  "description": "快速建立TCP隧道，方便将服务器上的端口映射到内网主机，支持多客户端及密码认证",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leizongmin/tcp-tunnel.git"
+  },
+  "keywords": [
+    "tcp",
+    "tunnel",
+    "proxy"
+  ],
+  "author": "Zongmin Lei <leizongmin@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/leizongmin/tcp-tunnel/issues"
+  },
+  "homepage": "https://github.com/leizongmin/tcp-tunnel#readme",
+  "dependencies": {
+    "clouds-socket": "^0.2.0-beta-5",
+    "lei-promise": "0.0.3",
+    "lei-utils": "^2.0.1"
+  },
+  "devDependencies": {
+    "mocha": "^2.3.4"
+  }
+}
