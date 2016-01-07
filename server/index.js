@@ -10,6 +10,7 @@ const EventEmitter = require('events');
 const socket = require('clouds-socket');
 const utils = require('../lib/utils');
 const debug = utils.debug('server');
+const TCPTunnelServerAgent = require('./agent');
 const TCPTunnelServerPortManager = require('./ports');
 
 
@@ -42,11 +43,15 @@ class TCPTunnelServer extends EventEmitter {
     if (!Array.isArray(options.ports)) throw new Error(`missing config: ports`);
     this._clientsInfodPortMap = new Map();
     options.ports.forEach(item => this._clientsInfodPortMap.set(item.port, item.client));
+    // ports agent
+    this._agent = new TCPTunnelServerAgent();
     // ports manager
     this._ports = new TCPTunnelServerPortManager();
     this._ports.reset(options.ports.map(item => item.port));
 
     this._ports.on('connection', (port, conn, server) => {
+
+      // lookup the client
       const client = this.lookupClientByPort(port);
       if (!client) {
         debug('connection{port=%s}: close { no client online }', port);
@@ -54,6 +59,19 @@ class TCPTunnelServer extends EventEmitter {
         return;
       }
       debug('connection{port=%s}: client=%s', port, client.name);
+
+      // add to session agent
+      const sid = utils.generateSessionId();
+      this._agent.add(sid, conn);
+
+      // tell client to connect to agent server
+      const info = this.lookupClientInfoByPort(port);
+      client.send(utils.signJSON(client.password, {
+        session: sid,
+        localPort: info.port,
+        serverPort: this._agent.getListenPort(),
+      }));
+
     });
 
     //--------------------------------------------------------------------------
@@ -120,9 +138,10 @@ class TCPTunnelServer extends EventEmitter {
           // handshake: {name: 'client name'}
           c.isVerified = true;
           c.name = d.name;
+          c.password = p;
           this._tmpClients.delete(c.id);
           this._clients.set(c.name, c);
-          c.send(utils.signJSON(p, {message: 'connected! good job'}));
+          c.send(utils.signJSON(c.password, {message: 'connected! good job'}));
           this.emit('client connected', c);
           debug('client{id=%s} verified: name=%s, message=%s', c.name, d.message);
 
@@ -157,6 +176,10 @@ class TCPTunnelServer extends EventEmitter {
   lookupClientNameByPort(port) {
     const c = this._clientsInfodPortMap.get(port);
     return (c && c.name) || false;
+  }
+
+  lookupClientInfoByPort(port) {
+    return this._clientsInfodPortMap.get(port) || false;
   }
 
   /**
