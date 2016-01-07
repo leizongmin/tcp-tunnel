@@ -52,9 +52,21 @@ class TCPTunnelClient extends EventEmitter {
       this.emit('exit');
     });
 
+    this._retryConnecting = 0;
     this._server.on('connect', _ => {
       debug('connected');
+
+      // if verify sign fail, don't reconnect
+      this._retryConnecting++;
+      if (this._retryConnecting >= 2 && !this._server.isVerified) {
+        debug('server verify failed');
+        this.emit('server verify failed');
+        this._server.exit();
+        return;
+      }
+
       // send handshake
+      this._server.isVerified = false;
       this._server.send(utils.signJSON(options.password, {
         name: options.name,
         message: 'hey guy!',
@@ -66,6 +78,11 @@ class TCPTunnelClient extends EventEmitter {
       d = utils.tryParseJSON(d);
       if (!d) return debug('invalid data from server: wrong format');
       if (!utils.verifySign(options.password, d)) return debug('invalid data from server: verify data sign failed');
+
+      if (!this._server.isVerified) {
+        this._server.isVerified = true;
+        this.emit('server verified');
+      }
 
       if (d.message) {
         debug('server message: %s', d.message);
@@ -88,6 +105,9 @@ class TCPTunnelClient extends EventEmitter {
     };
     this._heartbeatTid = setInterval(pingServer, options.heartbeat);
     this._server.once('connect', pingServer);
+    this._server.on('exit', _ => {
+      clearInterval(this._heartbeatTid);
+    });
 
     debug('created: server { host=%s, port=%s } client { name=%s, password=%s }',
       options.host, options.port, options.name, options.password);
