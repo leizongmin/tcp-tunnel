@@ -47,6 +47,7 @@ B:123456
 name = A
 password = 123456
 server = 192.168.9.10
+serverPort = 5000
 ```
 
 ## 启动客户端

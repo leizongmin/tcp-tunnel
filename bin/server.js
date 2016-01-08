@@ -10,35 +10,37 @@
 
 const fs = require('fs');
 const path = require('path');
+const clc = require('cli-color');
 const program = require('commander');
-const tracer = require('tracer');
 const utils = require('../lib/utils');
 const TCPTunnelServer = require('../server');
 const packageInfo = require('../package.json');
-
-
-const logger = tracer.colorConsole({
-  dateformat: 'yyyy-mm-dd HH:MM:ss.L',
-  format: '{{timestamp}} <{{title}}> {{message}}',
-});
+const logger = utils.createLogger();
 
 
 program
   .version(packageInfo.version)
   .option('-c, --config <config_file>', 'specify a config file')
 
-program.on('--help', function () {
-  console.log('  Usage:');
-  console.log('');
-  console.log('    $ ttserver -c [config-file]');
-  console.log('');
-  console.log('  For more details, please see: https://npmjs.org/package/tcp-tunnel')
-});
+const printHelp = _ => {
+  const help = clc.yellow(`
+  Usage:
+
+    $ ttclient -c [config-file]
+
+  For more details, please see: https://npmjs.org/package/tcp-tunnel
+  `);
+  console.log(help);
+};
+program.on('--help', printHelp);
 
 program.parse(process.argv);
 
 
-if (!program.config) utils.die('please specify a config file!');
+if (!program.config) {
+  printHelp();
+  utils.die('please specify a config file!');
+}
 if (!fs.existsSync(program.config)) utils.die(`config file ${program.config} does not exists`);
 
 logger.info(`load config file ${program.config}`);
@@ -67,7 +69,7 @@ const serverOptions = {
 const server = new TCPTunnelServer(serverOptions);
 
 server.once('listening', _ => {
-  logger.info('server listening on port %s', config.value.port);
+  logger.info('service PID#%s listening on port %s', process.pid, config.value.port);
 });
 
 server.on('error', err => {
@@ -121,4 +123,16 @@ server.on('port new connection', (port, server, client, conn) => {
              port, client.name, conn.remoteAddress, conn.remotePort);
 });
 
+process.on('exit', code => {
+  logger.warn('process exit with code %s', code);
+});
+
+process.on('SIGINT', _ => {
+  logger.warn('got SIGINT, going to shutdown...');
+  process.exit();
+});
+
+process.on('SIGHUP', _ => {
+  logger.warn('go SIGHUP, going to reload config...');
+});
 
