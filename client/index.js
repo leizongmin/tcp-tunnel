@@ -52,6 +52,9 @@ class TCPTunnelClient extends EventEmitter {
       debug('server event: exit');
       this.emit('exit');
     });
+    this._server.once('connect', _ => {
+      this._connectedOnStartup = true;
+    });
 
     this._retryConnecting = 0;
     this._server.on('connect', _ => {
@@ -73,6 +76,8 @@ class TCPTunnelClient extends EventEmitter {
         name: options.name,
         message: 'hey guy!',
       }));
+
+      this.emit('connect');
     });
 
     this._server.on('data', d => {

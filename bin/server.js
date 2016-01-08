@@ -74,6 +74,7 @@ server.once('listening', _ => {
 
 server.on('error', err => {
   logger.error('server error: %s', err);
+  process.exit(1);
 });
 
 server.once('exit', _ => {
@@ -123,6 +124,7 @@ server.on('port new connection', (port, server, client, conn) => {
              port, client.name, conn.remoteAddress, conn.remotePort);
 });
 
+
 process.on('exit', code => {
   logger.warn('process exit with code %s', code);
 });
@@ -134,5 +136,6 @@ process.on('SIGINT', _ => {
 
 process.on('SIGHUP', _ => {
   logger.warn('go SIGHUP, going to reload config...');
+  process.exit();
 });
 
