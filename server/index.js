@@ -23,7 +23,7 @@ class TCPTunnelServer extends EventEmitter {
    *   - {String} host, defaults to 0.0.0.0
    *   - {Number} port, required
    *   - {Object} clients, format: {name1: password1, name2: password2}
-   *   - {Object} ports, format: [{port: server_port, client: {name: clientName, port: clientPort}}, ...]
+   *   - {Object} listenPorts, format: [{port: server_port, client: {name: clientName, port: clientPort}}, ...]
    */
   constructor(options) {
     super();
@@ -40,14 +40,14 @@ class TCPTunnelServer extends EventEmitter {
     //--------------------------------------------------------------------------
 
     // ports
-    if (!Array.isArray(options.ports)) throw new Error(`missing config: ports`);
+    if (!Array.isArray(options.listenPorts)) throw new Error(`missing config: ports`);
     this._clientsInfodPortMap = new Map();
-    options.ports.forEach(item => this._clientsInfodPortMap.set(item.port, item.client));
+    options.listenPorts.forEach(item => this._clientsInfodPortMap.set(item.port, item.client));
     // ports agent
     this._agent = new TCPTunnelServerAgent();
     // ports manager
     this._ports = new TCPTunnelServerPortManager();
-    this._ports.reset(options.ports.map(item => item.port));
+    this._ports.reset(options.listenPorts.map(item => item.port));
 
     this._ports.on('connection', (port, conn, server) => {
 
@@ -122,7 +122,7 @@ class TCPTunnelServer extends EventEmitter {
 
       c.on('error', err => {
         debug('client{id=%s} event: error { %s }', c.id, err);
-        this.emit('client error', err, c);
+        this.emit('client error', c, err);
       });
 
       const disconnect = reason => {
@@ -158,7 +158,7 @@ class TCPTunnelServer extends EventEmitter {
 
           if (d.method === 'message') {
             debug('client message: %s', d.message);
-            this.emit('client message', d.message, d);
+            this.emit('client message', c, d.message, d);
             return;
           }
 

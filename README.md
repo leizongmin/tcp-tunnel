@@ -22,6 +22,10 @@ $ npm install tcp-tunnel -g
 服务器端配置文件`server.conf`：
 
 ```
+# 服务器配置
+:value
+port = 5000
+
 # 客户端名称及密码
 # 名称:密码
 :client
@@ -39,10 +43,10 @@ B:123456
 客户端配置文件`client.conf`：
 
 ```
-:data
-name =     A
+:value
+name = A
 password = 123456
-server =   192.168.9.10
+server = 192.168.9.10
 ```
 
 ## 启动客户端
