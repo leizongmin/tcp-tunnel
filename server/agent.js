@@ -32,10 +32,11 @@ class TCPTunnelServerAgent extends EventEmitter {
       debug('new connection: host=%s, port=%s', c.remoteAddress, c.remotePort);
       c.sessionId = null;
 
-      const disconnect = reason => {
+      const disconnect = (reason, s) => {
         debug('disconnect{host=%s, port=%s}: reason=%s', c.remoteAddress, c.remotePort, reason);
         c.destroy();
-        this._sessions.delete(c.sessionId);
+        if (s) s.destroy();
+        this.remove(c.sessionId);
       };
 
       const setupPipe = s => {
@@ -45,21 +46,17 @@ class TCPTunnelServerAgent extends EventEmitter {
         utils.pipeTwoWay(c, s);
 
         c.on('close', _ => {
-          s.destroy();
-          disconnect('client connection closed');
+          disconnect('client connection closed', s);
         });
         c.on('error', err => {
-          s.destroy();
-          disconnect(`client connection error: ${err}`)
+          disconnect(`client connection error: ${err}`, s)
         });
 
         s.on('close', _ => {
-          s.destroy();
-          disconnect('server connection closed');
+          disconnect('server connection closed', s);
         });
         s.on('error', err => {
-          s.destroy();
-          disconnect(`server connection error: ${err}`)
+          disconnect(`server connection error: ${err}`, s)
         });
 
       };
@@ -74,10 +71,20 @@ class TCPTunnelServerAgent extends EventEmitter {
         if (!session) return disconnect('invalid session ID');
         if (!utils.verifySign(session.password, d)) return disconnect('verify data sign failed');
 
-        // succeed
-        debug('connection{host=%s, port=%s} verified: session=%s', c.remoteAddress, c.remotePort, d.session);
-        c.sessionId = d.session;
-        setupPipe(session.connection);
+        if (d.method === 'connected') {
+
+          // succeed
+          debug('connection{host=%s, port=%s} verified: session=%s', c.remoteAddress, c.remotePort, d.session);
+          c.sessionId = d.session;
+          setupPipe(session.connection);
+
+        } else {
+
+          // cannot connect to the port on client side
+          debug('connection{host=%s, port=%s} failed: session=%s', c.remoteAddress, c.remotePort, d.session);
+          disconnect('cannot connect to the client side port', session.connection);
+
+        }
 
       });
 
@@ -85,12 +92,54 @@ class TCPTunnelServerAgent extends EventEmitter {
 
   }
 
-  add(sid, password, connection) {
-    debug('add: sid=%s, password=%s, client { host=%s, port=%s }',
-          sid, password, connection.remoteAddress, connection.remotePort);
-    this._sessions.set(sid, {password, connection});
+  /**
+   * add session
+   *
+   * @param {String} sid
+   * @param {String} clientName
+   * @param {String} password
+   * @param {Object} connection
+   */
+  add(sid, clientName, password, connection) {
+    debug('add: sid=%s, clientName=%s, password=%s, client { host=%s, port=%s }',
+          sid, clientName, password, connection.remoteAddress, connection.remotePort);
+    this._sessions.set(sid, {id: sid, clientName, password, connection});
+    connection.once('close', _ => {
+      this.remove(sid);
+    });
   }
 
+  /**
+   * remove session by id
+   *
+   * @param {String} sid
+   */
+  remove(sid) {
+    debug('remove: sid=%s', sid);
+    const session = this._sessions.get(sid);
+    if (session) session.connection.destroy();
+  }
+
+  /**
+   * remove all sessions by client name
+   *
+   * @param {String} name
+   */
+  removeAllByClientName(name) {
+    debug('remove all by client name: %s', name);
+    for (const id of this._sessions.keys()) {
+      const session = this._sessions.get(id);
+      if (session.clientName === name) {
+        this.remove(id);
+      }
+    }
+  }
+
+  /**
+   * get agent server listening port
+   *
+   * @return {Number}
+   */
   getListenPort() {
     return this._server.address().port;
   }

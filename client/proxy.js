@@ -31,34 +31,52 @@ class TCPTunnelClientProxy extends EventEmitter {
     if (isNaN(options.remotePort)) throw new Error(`invalid remotePort: ${options.remotePort}`);
     if (!options.remoteHost) throw new Error(`missing remoteHost`);
 
-    this.local = net.connect(options.localPort, '127.0.0.1');
-    this.remote = net.connect(options.remotePort, options.remoteHost);
 
-    utils.pipeTwoWay(this.local, this.remote);
+    // connect to local port first
+    this.local = net.connect(options.localPort, '127.0.0.1', _ => {
+      debug('connection{localPort=%s} connected', options.localPort);
+      this.local.isConnected = true;
+      this.emit('local connect', this.local);
+
+      // next, connect to remote port
+      this.remote = net.connect(options.remotePort, options.remoteHost, _ => {
+        debug('connection{remotePort=%s} connected', options.remotePort);
+        this.remote.isConnected = true;
+        this.emit('remote connect', this.remote);
+      });
+
+      bind();
+    });
 
     const destroy = _ => {
       debug('destroy: localPort=%s, remotePort=%s', options.localPort, options.remotePort);
       this.local.destroy();
-      this.remote.destroy();
+      if (this.remote) this.remote.destroy();
+    };
+
+    const bind = _ => {
+
+      utils.pipeTwoWay(this.local, this.remote);
+
+      this.remote.once('error', err => {
+        debug('connection{remotePort=%s} error: error=%s', options.remotePort, err);
+        this.emit('remote error', err, this.remote);
+      });
+      this.remote.once('close', _ => {
+        debug('connection{localPort=%s} close', options.localPort);
+        this.emit('remote close', this.remote);
+        destroy();
+      });
+
     };
 
     this.local.once('error', err => {
       debug('connection{localPort=%s} error: error=%s', options.localPort, err);
-      this.emit('error', err, this.local);
+      this.emit('local error', err, this.local);
     });
     this.local.once('close', _ => {
       debug('connection{localPort=%s} close', options.localPort);
-      this.emit('close', this.local);
-      destroy();
-    });
-
-    this.remote.once('error', err => {
-      debug('connection{remotePort=%s} error: error=%s', options.remotePort, err);
-      this.emit('error', err, this.remote);
-    });
-    this.remote.once('close', _ => {
-      debug('connection{localPort=%s} close', options.localPort);
-      this.emit('close', this.remote);
+      this.emit('local close', this.local);
       destroy();
     });
 

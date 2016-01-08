@@ -69,7 +69,7 @@ class TCPTunnelClient extends EventEmitter {
       // send handshake
       this._server.isVerified = false;
       this._server.send(utils.signJSON(options.password, {
-        type: 'verify',
+        method: 'verify',
         name: options.name,
         message: 'hey guy!',
       }));
@@ -86,13 +86,13 @@ class TCPTunnelClient extends EventEmitter {
         this.emit('server verified');
       }
 
-      if (d.type === 'message') {
+      if (d.method === 'message') {
         debug('server message: %s', d.message);
         this.emit('server message', d.message, d);
         return;
       }
 
-      if (d.type === 'new_session') {
+      if (d.method === 'new_session') {
         debug('new session: session=%s, localPort=%s, remotePort=%s', d.session, d.localPort, d.remotePort);
 
         // setup proxy
@@ -101,19 +101,22 @@ class TCPTunnelClient extends EventEmitter {
           remotePort: d.remotePort,
           remoteHost: options.host,
         });
-        proxy.once('error', (err, conn) => {
-          debug('session error: id=%s, error=%s client { host=%s, port=%s }',
-                d.session, err, conn.remoteAddress, conn.remotePort);
-        });
-        proxy.once('close', conn => {
-          debug('session close: id=%s client { host=%s, port=%s }',
-                d.session, conn.remoteAddress, conn.remotePort);
+
+        proxy.once('remote connect', _ => {
+          proxy.remote.write(utils.signJSON(options.password, {
+            method: 'connected',
+            session: d.session,
+          }));
         });
 
-        // verify session
-        proxy.remote.write(utils.signJSON(options.password, {
-          session: d.session,
-        }));
+        proxy.once('local close', local => {
+          if (local.isConnected) return;
+          this._server.send(utils.signJSON(options.password, {
+            method: 'close_session',
+            session: d.session,
+            message: `cannot connect to local port ${d.localPort}`,
+          }));
+        });
 
         return;
       }
@@ -143,6 +146,8 @@ class TCPTunnelClient extends EventEmitter {
 
   /**
    * exit
+   *
+   * @param {Function} callback
    */
   exit(callback) {
     this._server.exit(callback);

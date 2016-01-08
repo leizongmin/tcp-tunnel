@@ -62,16 +62,20 @@ class TCPTunnelServer extends EventEmitter {
 
       // add to session agent
       const sid = utils.generateSessionId();
-      this._agent.add(sid, client.password, conn);
+      this._agent.add(sid, client.name, client.password, conn);
 
       // tell client to connect to agent server
       const info = this.lookupClientInfoByPort(port);
       client.send(utils.signJSON(client.password, {
-        type: 'new_session',
+        method: 'new_session',
         session: sid,
         localPort: info.port,
         remotePort: this._agent.getListenPort(),
       }));
+
+      conn.once('close', _ => {
+        debug('connection{port=%s} close: client=%s', port, client.name);
+      });
 
     });
 
@@ -112,6 +116,7 @@ class TCPTunnelServer extends EventEmitter {
         debug('client{id=%s} event: exit', c.id);
         this._clients.delete(c.name);
         this._tmpClients.delete(c.id);
+        this._agent.removeAllByClientName(c.name);
         this.emit('client disconnected', c);
       });
 
@@ -143,7 +148,7 @@ class TCPTunnelServer extends EventEmitter {
           this._tmpClients.delete(c.id);
           this._clients.set(c.name, c);
           c.send(utils.signJSON(c.password, {
-            type: 'message',
+            method: 'message',
             message: 'connected! good job',
           }));
           this.emit('client connected', c);
@@ -151,10 +156,15 @@ class TCPTunnelServer extends EventEmitter {
 
         } else {
 
-          if (d.message) {
-            debug('client{id=%s} message: %s', c.id, d.message);
-            this.emit('client message', c, d.message, d);
+          if (d.method === 'message') {
+            debug('client message: %s', d.message);
+            this.emit('client message', d.message, d);
             return;
+          }
+
+          if (d.method === 'close_session') {
+            debug('client request to close session: %s', d.session);
+            this._agent.remove(d.session);
           }
 
           // other message
