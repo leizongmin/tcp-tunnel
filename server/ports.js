@@ -56,12 +56,12 @@ class TCPTunnelServerPortManager extends EventEmitter {
 
       s.on('error', err => {
         debug('port error: port=%s, error=%s', port, err);
-        this.emit('port error', port, err, s);
+        this.emit('port error', port, s, err);
       });
 
       s.on('close', _ => {
         debug('port close: port=%s', port);
-        this.emit('port close', port, a);
+        this.emit('port close', port, s);
       });
 
     }

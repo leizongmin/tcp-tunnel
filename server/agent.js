@@ -32,6 +32,12 @@ class TCPTunnelServerAgent extends EventEmitter {
       debug('new connection: host=%s, port=%s', c.remoteAddress, c.remotePort);
       c.sessionId = null;
 
+      this.emit('new connection', c);
+
+      c.once('close', _ => {
+        this.emit('connection close', c);
+      });
+
       const disconnect = (reason, s) => {
         debug('disconnect{host=%s, port=%s}: reason=%s', c.remoteAddress, c.remotePort, reason);
         c.destroy();
@@ -58,6 +64,8 @@ class TCPTunnelServerAgent extends EventEmitter {
         s.on('error', err => {
           disconnect(`server connection error: ${err}`, s)
         });
+
+        this.emit('pipe connection', c, s);
 
       };
 

@@ -79,7 +79,8 @@ server.once('exit', _ => {
 });
 
 server.on('client connected', c => {
-  logger.info('client %s connected', c.name);
+  const s = c._socket;
+  logger.info('client %s connected from %s:%s', c.name, s.remoteAddress, s.remotePort);
 });
 
 server.on('client message', (c, msg) => {
@@ -93,4 +94,31 @@ server.on('client disconnected', c => {
 server.on('client error', (c, err) => {
   logger.warn('error from client %s: %s', c.name || `#${c.id}`, err);
 });
+
+server.on('agent new connection', c => {
+  logger.log('agent new connection from %s:%s', c.remoteAddress, c.remotePort);
+});
+
+server.on('agent connection close', c => {
+  logger.log('agent connection from %s:%s has been closed', c.remoteAddress, c.remotePort);
+});
+
+server.on('agent pipe connection', (c, s) => {
+  logger.log('agent connection pipe %s:%s to %s:%s',
+             c.remoteAddress, c.remotePort, s.remoteAddress, s.remotePort);
+});
+
+server.on('port error', (port, s, err) => {
+  logger.warn('server port %s error: %s', port, err);
+});
+
+server.on('port close', (port, s) => {
+  logger.log('server port %s has been closed', port);
+});
+
+server.on('port new connection', (port, server, client, conn) => {
+  logger.log('accepted new connection on port %s<%s> from %s:%s',
+             port, client.name, conn.remoteAddress, conn.remotePort);
+});
+
 

@@ -121,7 +121,7 @@ class TCPTunnelClient extends EventEmitter {
         return;
       }
 
-      console.log(d);
+      this.emit('unknown method', d);
 
     });
 

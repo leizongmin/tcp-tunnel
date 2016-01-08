@@ -43,12 +43,28 @@ class TCPTunnelServer extends EventEmitter {
     if (!Array.isArray(options.listenPorts)) throw new Error(`missing config: ports`);
     this._clientsInfodPortMap = new Map();
     options.listenPorts.forEach(item => this._clientsInfodPortMap.set(item.port, item.client));
+
     // ports agent
     this._agent = new TCPTunnelServerAgent();
+    this._agent.on('new connection', c => {
+      this.emit('agent new connection', c);
+    });
+    this._agent.on('connection close', c => {
+      this.emit('agent connection close', c);
+    });
+    this._agent.on('pipe connection', (c, s) => {
+      this.emit('agent pipe connection', c, s);
+    });
+
     // ports manager
     this._ports = new TCPTunnelServerPortManager();
     this._ports.reset(options.listenPorts.map(item => item.port));
-
+    this._ports.on('port error', (port, s, err) => {
+      this.emit('port error', port, s, err);
+    });
+    this._ports.on('port close', (port, s) => {
+      this.emit('port close', port, s);
+    });
     this._ports.on('connection', (port, conn, server) => {
 
       // lookup the client
@@ -59,6 +75,8 @@ class TCPTunnelServer extends EventEmitter {
         return;
       }
       debug('connection{port=%s}: client=%s', port, client.name);
+
+      this.emit('port new connection', port, server, client, conn);
 
       // add to session agent
       const sid = utils.generateSessionId();
@@ -165,10 +183,11 @@ class TCPTunnelServer extends EventEmitter {
           if (d.method === 'close_session') {
             debug('client request to close session: %s', d.session);
             this._agent.remove(d.session);
+            return;
           }
 
           // other message
-          console.log(d);
+          this.emit('unknown method', c, d);
 
         }
       });
