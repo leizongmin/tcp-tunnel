@@ -63,11 +63,11 @@ function initClient(exit) {
 
   client.on('connect', _ => {
     connectrdOnStartup = true;
-    logger.info('connected to server %s:%s', clientOptions.host, clientOptions.port);
+    logger.info('service PID#%s connected to server %s:%s', process.pid, clientOptions.host, clientOptions.port);
   });
 
   client.on('server verify failed', _ => {
-    logger.error('verify password failed on server %s:%s', clientOptions.host, clientOptions.port);
+    logger.error('verify password failed, going to shutdown...');
     process.exit(1);
   });
 
@@ -77,6 +77,42 @@ function initClient(exit) {
     retry(err);
   });
 
+  client.on('server verified', _ => {
+    logger.info('verify password succeed');
+  });
+
+  client.on('server message', msg => {
+    logger.info('message from server: %s', msg);
+  });
+
+  client.on('new session', (localPort, remotePort) => {
+    logger.log('new session: %s:%s <=> %s:%s', '127.0.0.1', localPort, clientOptions.host, remotePort);
+  });
+
+  client.on('proxy local connect', p => {
+    logger.debug('proxy connected to %s:%s', p.local.remoteAddress, p.local.remotePort);
+  });
+
+  client.on('proxy remote connect', p => {
+    logger.debug('proxy connected to %s:%s', p.remote.remoteAddress, p.remote.remotePort);
+  });
+
+  client.on('proxy local close', p => {
+    logger.debug('proxy connection closed from %s:%s', p.local.remoteAddress, p.local.remotePort);
+  });
+
+  client.on('proxy remote close', p => {
+    logger.debug('proxy connection closed from %s:%s', p.remote.remoteAddress, p.remote.remotePort);
+  });
+
+  client.on('proxy local error', (p, err) => {
+    logger.warn('proxy got an error form %s:%s: %s', p.local.remoteAddress, p.local.remotePort, err);
+  });
+
+  client.on('proxy remote error', (p, err) => {
+    logger.warn('proxy got an error form %s:%s: %s', p.remote.remoteAddress, p.remote.remotePort, err);
+  });
+
 }
 
 function retry(err) {
@@ -84,11 +120,10 @@ function retry(err) {
     logger.error('cannot connect to server %s:%s', clientOptions.host, clientOptions.port);
     process.exit(2);
   }
-  if (err.code !== 'ECONNREFUSED') {
+  /*if (err.code !== 'ECONNREFUSED') {
     logger.error('going to shutdown...');
     process.exit(3);
-  }
-
+  }*/
   logger.warn('try to reconnect after 5s ...');
   setTimeout(_ => {
     initClient(retry);

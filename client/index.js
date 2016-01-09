@@ -107,7 +107,12 @@ class TCPTunnelClient extends EventEmitter {
           remoteHost: options.host,
         });
 
+        proxy.once('local connect', _ => {
+          this.emit('proxy local connect', proxy);
+        });
+
         proxy.once('remote connect', _ => {
+          this.emit('proxy remote connect', proxy);
           proxy.remote.write(utils.signJSON(options.password, {
             method: 'connected',
             session: d.session,
@@ -115,6 +120,7 @@ class TCPTunnelClient extends EventEmitter {
         });
 
         proxy.once('local close', local => {
+          this.emit('local close', proxy);
           if (local.isConnected) return;
           this._server.send(utils.signJSON(options.password, {
             method: 'close_session',
@@ -122,6 +128,20 @@ class TCPTunnelClient extends EventEmitter {
             message: `cannot connect to local port ${d.localPort}`,
           }));
         });
+
+        proxy.once('remote close', _ => {
+          this.emit('proxy remote close', proxy);
+        });
+
+        proxy.once('local error', err => {
+          this.emit('proxy local error', proxy, err);
+        });
+
+        proxy.once('remote error', err => {
+          this.emit('proxy remote error', proxy, err);
+        });
+
+        this.emit('new session', d.localPort, d.remotePort);
 
         return;
       }
@@ -137,6 +157,7 @@ class TCPTunnelClient extends EventEmitter {
         debug('ping: result { delay=%s, timestamp=%s }', delay, timestamp);
         this._pingInfo.delay = delay;
         this._pingInfo.timestamp = timestamp;
+        this.emit('ping', delay, timestamp);
       });
     };
     this._heartbeatTid = setInterval(pingServer, options.heartbeat);
