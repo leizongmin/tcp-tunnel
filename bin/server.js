@@ -10,6 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const clc = require('cli-color');
 const program = require('commander');
 const utils = require('../lib/utils');
@@ -22,6 +23,7 @@ require('./header');
 program
   .version(packageInfo.version)
   .option('-c, --config <config_file>', 'specify a config file')
+  .option('-r, --reload', 'reload config file')
 
 program.on('--help', _ => {
   const help = clc.yellow(`
@@ -55,12 +57,29 @@ if (!program.config) {
   program.help();
   utils.die('please specify a config file!');
 }
+program.config = path.resolve(program.config);
 if (!fs.existsSync(program.config)) utils.die(`config file ${program.config} does not exists`);
 
 logger.info(`load config file ${program.config}`);
 const parseConfigResult = utils.parseConfig(fs.readFileSync(program.config).toString());
 if (parseConfigResult.error.length > 0) utils.die(`parse config file error:\n${parseConfigResult.error.join('\n')}`);
 const config = parseConfigResult.config;
+
+
+const pidFile = path.resolve(os.tmpDir(), `ttserver-port-${config.port}.pid`);
+if (program.reload) {
+  if (!fs.existsSync(pidFile)) {
+    logger.error('PID file does not exists, please make sure ttserver is running');
+    process.exit(-2);
+  }
+  const pid = Number(fs.readFileSync(pidFile).toString());
+  logger.warn('will send reload command to PID#%s...', pid);
+  process.kill(pid, 'SIGHUP');
+  logger.warn('command has been sent');
+  process.exit(-3);
+} else {
+  fs.writeFileSync(pidFile, process.pid.toString());
+}
 
 
 function convertRuleToPorts(rule) {
@@ -88,7 +107,7 @@ server.once('listening', _ => {
 
 server.on('error', err => {
   logger.error('server error: %s', err);
-  process.exit(1);
+  process.exit(-1);
 });
 
 server.once('exit', _ => {

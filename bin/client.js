@@ -78,7 +78,7 @@ function initClient(exit) {
 
   client.once('server verify failed', _ => {
     logger.error('verify password failed, going to shutdown...');
-    process.exit(1);
+    process.exit(-1);
   });
 
   client.once('error', err => {
@@ -93,7 +93,7 @@ function initClient(exit) {
 
   client.once('conflict', _ => {
     logger.error('other client was connected to server as %s, going to shutdown...', clientOptions.name);
-    process.exit(3);
+    process.exit(-3);
   });
 
   client.on('server message', msg => {
@@ -133,11 +133,11 @@ function initClient(exit) {
 function retry(err) {
   if (!connectrdOnStartup) {
     logger.error('cannot connect to server %s:%s', clientOptions.host, clientOptions.port);
-    process.exit(2);
+    process.exit(-2);
   }
   /*if (err.code !== 'ECONNREFUSED') {
     logger.error('going to shutdown...');
-    process.exit(3);
+    process.exit(-3);
   }*/
   logger.warn('try to reconnect after 5s ...');
   setTimeout(_ => {
@@ -164,10 +164,5 @@ process.on('exit', code => {
 
 process.on('SIGINT', _ => {
   logger.warn('got SIGINT, going to shutdown...');
-  process.exit();
-});
-
-process.on('SIGHUP', _ => {
-  logger.warn('go SIGHUP, going to reload config...');
   process.exit();
 });

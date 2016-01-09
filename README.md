@@ -62,6 +62,13 @@ $ ttclient -c client.conf
 $ ttserver -c server.conf
 ```
 
+如果更改了配置项中的`:client`和`:rule`部分，可在执行时添加`-r`选项重新加载配置（热更新，服务进程不重启）：
+
+```bash
+$ ttserver -c server.conf -r
+```
+
+
 ## License
 
 ```
