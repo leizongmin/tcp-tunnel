@@ -23,7 +23,7 @@ program
   .version(packageInfo.version)
   .option('-c, --config <config_file>', 'specify a config file')
 
-const printHelp = _ => {
+program.on('--help', _ => {
   const help = clc.yellow(`
   Usage:
 
@@ -46,14 +46,13 @@ const printHelp = _ => {
   For more details, please see https://github.com/leizongmin/tcp-tunnel
   `);
   console.log(help);
-};
-program.on('--help', printHelp);
+});
 
 program.parse(process.argv);
 
 
 if (!program.config) {
-  printHelp();
+  program.help();
   utils.die('please specify a config file!');
 }
 if (!fs.existsSync(program.config)) utils.die(`config file ${program.config} does not exists`);
