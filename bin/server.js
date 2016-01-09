@@ -28,7 +28,21 @@ const printHelp = _ => {
 
     $ ttclient -c [config-file]
 
-  For more details, please see: https://npmjs.org/package/tcp-tunnel
+  Example config file:
+  -------------------
+    :value
+    port = 5000
+
+    :client
+    A:123456
+    B:123456
+
+    :rule
+    5001 -> A:3000
+    5002 -> B:3000
+  -------------------
+
+  For more details, please see https://github.com/leizongmin/tcp-tunnel
   `);
   console.log(help);
 };
