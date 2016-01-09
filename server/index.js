@@ -32,17 +32,13 @@ class TCPTunnelServer extends EventEmitter {
 
     // clients
     if (!options.clients) throw new Error(`missing config: clients`);
-    this._clientsPassword = new Map();
-    for (const n in options.clients) {
-      this._clientsPassword.set(n, options.clients[n]);
-    }
+    this.setClientsPassword(options.clients);
 
     //--------------------------------------------------------------------------
 
     // ports
     if (!Array.isArray(options.listenPorts)) throw new Error(`missing config: ports`);
-    this._clientsInfodPortMap = new Map();
-    options.listenPorts.forEach(item => this._clientsInfodPortMap.set(item.port, item.client));
+    this.setListenPorts(options.listenPorts);
 
     // ports agent
     this._agent = new TCPTunnelServerAgent();
@@ -146,8 +142,10 @@ class TCPTunnelServer extends EventEmitter {
       });
 
       const disconnect = reason => {
-        debug('client{id=%s} disconnect: name=%s, reason=%s', c.id, c.name, reason);
-        c.exit();
+        process.nextTick(_ => {
+          debug('client{id=%s} disconnect: name=%s, reason=%s', c.id, c.name, reason);
+          c.exit();
+        });
       };
 
       c.on('data', d => {
@@ -157,7 +155,14 @@ class TCPTunnelServer extends EventEmitter {
 
         // verify sign, if verify failed then disconnect
         const p = this._clientsPassword.get(c.name || d.name);
-        if (!utils.verifySign(p, d)) return disconnect('very data sign failed');
+        if (!utils.verifySign(p, d)) {
+          c.send(utils.signJSON(c.password, {
+            method: 'message',
+            message: 'verify password failed',
+          }));
+          disconnect('very data sign failed');
+          return;
+        }
 
         if (!c.isVerified) {
 
@@ -212,6 +217,26 @@ class TCPTunnelServer extends EventEmitter {
 
     //--------------------------------------------------------------------------
     debug('created: server { host=%s, port=%s }', options.host, options.port);
+  }
+
+  setClientsPassword(clients) {
+    if (this._clientsPassword) {
+      this._clientsPassword.clear();
+    } else {
+      this._clientsPassword = new Map();
+    }
+    for (const n in clients) {
+      this._clientsPassword.set(n, clients[n]);
+    }
+  }
+
+  setListenPorts(listenPorts) {
+    if (this._clientsInfodPortMap) {
+      this._clientsInfodPortMap.clear();
+    } else {
+      this._clientsInfodPortMap = new Map();
+    }
+    listenPorts.forEach(item => this._clientsInfodPortMap.set(item.port, item.client));
   }
 
   lookupClientByName(name) {
