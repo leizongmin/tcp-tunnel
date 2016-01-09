@@ -30,7 +30,6 @@
     "clouds-socket": "^0.2.0-beta-5",
     "commander": "^2.9.0",
     "debug": "^2.2.0",
-    "lei-promise": "0.0.3",
     "lei-utils": "^2.0.1",
     "tracer": "^0.8.2"
   },

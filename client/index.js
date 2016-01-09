@@ -80,6 +80,8 @@ class TCPTunnelClient extends EventEmitter {
       this.emit('connect');
     });
 
+    this._proxyConnections = 0;
+
     this._server.on('data', d => {
 
       d = utils.tryParseJSON(d);
@@ -142,6 +144,11 @@ class TCPTunnelClient extends EventEmitter {
         });
 
         this.emit('new session', d.localPort, d.remotePort);
+
+        this._proxyConnections++;
+        proxy.once('destroy', _ => {
+          this._proxyConnections--;
+        });
 
         return;
       }

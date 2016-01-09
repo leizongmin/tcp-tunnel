@@ -125,6 +125,16 @@ server.on('port new connection', (port, server, client, conn) => {
 });
 
 
+// print service status
+setInterval(_ => {
+  const info = {
+    clients: server._clients.size,
+    sessions: server._agent._sessions.size,
+  };
+  logger.info(utils.getProcessStatus(info));
+}, 1000);
+
+
 process.on('exit', code => {
   logger.warn('process exit with code %s', code);
 });

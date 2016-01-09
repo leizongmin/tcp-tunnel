@@ -56,10 +56,11 @@ const clientOptions = {
   password: config.value.password,
 };
 let connectrdOnStartup = false;
+let client = null;
 
 function initClient(exit) {
 
-  const client = new TCPTunnelClient(clientOptions);
+  client = new TCPTunnelClient(clientOptions);
 
   client.on('connect', _ => {
     connectrdOnStartup = true;
@@ -131,6 +132,16 @@ function retry(err) {
 }
 
 initClient(retry);
+
+
+// print service status
+setInterval(_ => {
+  const info = {};
+  if (client) {
+    info.connections = client._proxyConnections;
+  }
+  logger.info(utils.getProcessStatus(info));
+}, 10000);
 
 
 process.on('exit', code => {

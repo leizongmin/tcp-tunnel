@@ -48,10 +48,17 @@ class TCPTunnelClientProxy extends EventEmitter {
       bind();
     });
 
+    this._destroyEmitted = false;
     const destroy = _ => {
       debug('destroy: localPort=%s, remotePort=%s', options.localPort, options.remotePort);
       this.local.destroy();
-      if (this.remote) this.remote.destroy();
+      if (this.remote) {
+        this.remote.destroy();
+      }
+      if (!this._destroyEmitted) {
+        this._destroyEmitted = true;
+        this.emit('destroy');
+      }
     };
 
     const bind = _ => {
@@ -61,6 +68,7 @@ class TCPTunnelClientProxy extends EventEmitter {
       this.remote.once('error', err => {
         debug('connection{remotePort=%s} error: error=%s', options.remotePort, err);
         this.emit('remote error', err, this.remote);
+        destroy();
       });
       this.remote.once('close', _ => {
         debug('connection{localPort=%s} close', options.localPort);
@@ -73,6 +81,7 @@ class TCPTunnelClientProxy extends EventEmitter {
     this.local.once('error', err => {
       debug('connection{localPort=%s} error: error=%s', options.localPort, err);
       this.emit('local error', err, this.local);
+      destroy();
     });
     this.local.once('close', _ => {
       debug('connection{localPort=%s} close', options.localPort);
