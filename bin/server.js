@@ -132,7 +132,7 @@ setInterval(_ => {
     sessions: server._agent._sessions.size,
   };
   logger.info(utils.getProcessStatus(info));
-}, 1000);
+}, 10000);
 
 
 process.on('exit', code => {

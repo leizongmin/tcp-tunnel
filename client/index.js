@@ -153,6 +153,12 @@ class TCPTunnelClient extends EventEmitter {
         return;
       }
 
+      if (d.method === 'conflict') {
+        this.emit('conflict');
+        this._server.exit();
+        return;
+      }
+
       this.emit('unknown method', d);
 
     });

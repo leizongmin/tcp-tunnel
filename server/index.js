@@ -132,8 +132,10 @@ class TCPTunnelServer extends EventEmitter {
 
       c.once('exit', _ => {
         debug('client{id=%s} event: exit', c.id);
-        this._clients.delete(c.name);
-        this._tmpClients.delete(c.id);
+        if (this._clients.has(c.name) && this._clients.get(c.name).id === c.id) {
+          this._clients.delete(c.name);
+        }
+        if (this._tmpClients.has(c.id)) this._tmpClients.delete(c.id);
         this._agent.removeAllByClientName(c.name);
         this.emit('client disconnected', c);
       });
@@ -164,13 +166,27 @@ class TCPTunnelServer extends EventEmitter {
           c.name = d.name;
           c.password = p;
           this._tmpClients.delete(c.id);
+
+          // if this client was connected, then exit the old connection
+          if (this._clients.has(c.name)) {
+            debug('client{name=%s} was connected, exit old connection', c.name);
+            const oc = this._clients.get(c.name);
+            oc.send(utils.signJSON(oc.password, {
+              method: 'conflict',
+            }), _ => {
+              oc.exit();
+            });
+            this._clients.delete(c.name);
+          }
+
+          // register the new connection
           this._clients.set(c.name, c);
           c.send(utils.signJSON(c.password, {
             method: 'message',
             message: 'connected! good job',
           }));
           this.emit('client connected', c);
-          debug('client{id=%s} verified: name=%s, message=%s', c.name, d.message);
+          debug('client{name=%s} verified: name=%s, message=%s', c.name, d.message);
 
         } else {
 

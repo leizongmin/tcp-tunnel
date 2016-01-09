@@ -62,24 +62,29 @@ function initClient(exit) {
 
   client = new TCPTunnelClient(clientOptions);
 
-  client.on('connect', _ => {
+  client.once('connect', _ => {
     connectrdOnStartup = true;
     logger.info('service PID#%s connected to server %s:%s', process.pid, clientOptions.host, clientOptions.port);
   });
 
-  client.on('server verify failed', _ => {
+  client.once('server verify failed', _ => {
     logger.error('verify password failed, going to shutdown...');
     process.exit(1);
   });
 
-  client.on('error', err => {
+  client.once('error', err => {
     logger.error('an error has been occurred: %s', err.message);
     client.exit();
     retry(err);
   });
 
-  client.on('server verified', _ => {
+  client.once('server verified', _ => {
     logger.info('verify password succeed');
+  });
+
+  client.once('conflict', _ => {
+    logger.error('other client was connected to server as %s, going to shutdown...', clientOptions.name);
+    process.exit(3);
   });
 
   client.on('server message', msg => {
