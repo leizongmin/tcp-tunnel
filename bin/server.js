@@ -160,6 +160,14 @@ process.on('SIGINT', _ => {
 
 process.on('SIGHUP', _ => {
   logger.warn('go SIGHUP, going to reload config...');
-  process.exit();
+  const result = utils.parseConfig(fs.readFileSync(program.config).toString());
+  if (result.error.length > 0) {
+    console.log(clc.red(`parse config file error:\n${result.error.join('\n')}`));
+  } else {
+    const config = result.config;
+    server.setClientsPassword(config.client);
+    server.setListenPorts(convertRuleToPorts(config.rule));
+    logger.info('new config reloaded');
+  }
 });
 
