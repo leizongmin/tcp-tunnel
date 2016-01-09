@@ -16,6 +16,7 @@ const utils = require('../lib/utils');
 const TCPTunnelClient = require('../client');
 const packageInfo = require('../package.json');
 const logger = utils.createLogger();
+require('./header');
 
 
 program
