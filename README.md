@@ -1,3 +1,26 @@
+[![NPM version][npm-image]][npm-url]
+[![build status][travis-image]][travis-url]
+[![Test coverage][coveralls-image]][coveralls-url]
+[![Gittip][gittip-image]][gittip-url]
+[![David deps][david-image]][david-url]
+[![node version][node-image]][node-url]
+[![npm download][download-image]][download-url]
+
+[npm-image]: https://img.shields.io/npm/v/tcp-tunnel.svg?style=flat-square
+[npm-url]: https://npmjs.org/package/tcp-tunnel
+[travis-image]: https://img.shields.io/travis/leizongmin/tcp-tunnel.svg?style=flat-square
+[travis-url]: https://travis-ci.org/leizongmin/tcp-tunnel
+[coveralls-image]: https://img.shields.io/coveralls/leizongmin/tcp-tunnel.svg?style=flat-square
+[coveralls-url]: https://coveralls.io/r/leizongmin/tcp-tunnel?branch=master
+[gittip-image]: https://img.shields.io/gittip/leizongmin.svg?style=flat-square
+[gittip-url]: https://www.gittip.com/leizongmin/
+[david-image]: https://img.shields.io/david/leizongmin/tcp-tunnel.svg?style=flat-square
+[david-url]: https://david-dm.org/leizongmin/tcp-tunnel
+[node-image]: https://img.shields.io/badge/node.js-%3E=_4.0-green.svg?style=flat-square
+[node-url]: http://nodejs.org/download/
+[download-image]: https://img.shields.io/npm/dm/tcp-tunnel.svg?style=flat-square
+[download-url]: https://npmjs.org/package/tcp-tunnel
+
 # tcp-tunnel
 快速建立TCP隧道，方便将服务器上的端口映射到内网主机，支持多客户端及密码认证
 

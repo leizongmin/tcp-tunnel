@@ -4,7 +4,8 @@
   "description": "快速建立TCP隧道，方便将服务器上的端口映射到内网主机，支持多客户端及密码认证",
   "main": "lib/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -w -r 0"
   },
   "bin": {
     "ttserver": "./bin/server.js",
