@@ -1,6 +1,6 @@
 {
   "name": "tcp-tunnel",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "快速建立TCP隧道，方便将服务器上的端口映射到内网主机，支持多客户端及密码认证",
   "main": "lib/index.js",
   "scripts": {
