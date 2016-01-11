@@ -41,7 +41,6 @@ $ npm install tcp-tunnel -g
 Server side configuration file `server.conf`：
 
 ```
-# 服务器配置
 :value
 port = 5000
 

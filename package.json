@@ -1,6 +1,6 @@
 {
   "name": "tcp-tunnel",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "TCP tunnel server & client, multi-user support",
   "main": "lib/index.js",
   "scripts": {
