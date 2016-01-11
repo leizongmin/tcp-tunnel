@@ -10,6 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const program = require('commander');
 const clc = require('cli-color');
 const utils = require('../lib/utils');
@@ -56,6 +57,11 @@ logger.info(`load config file ${program.config}`);
 const parseConfigResult = utils.parseConfig(fs.readFileSync(program.config).toString());
 if (parseConfigResult.error.length > 0) utils.die(`parse config file error:\n${parseConfigResult.error.join('\n')}`);
 const config = parseConfigResult.config;
+
+
+const pidFile = path.resolve(os.tmpDir(), `ttclient-${config.value.server}-${config.value.serverPort}.pid`);
+fs.writeFileSync(pidFile, process.pid.toString());
+logger.info('PID save to file %s', pidFile);
 
 
 function convertRuleToPorts(rule) {
