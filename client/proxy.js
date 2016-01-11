@@ -18,6 +18,7 @@ class TCPTunnelClientProxy extends EventEmitter {
    * start server
    *
    * @param {Object} options
+   *   - {String} localHost
    *   - {Number} localPort
    *   - {Number} remotePort
    *   - {String} remoteHost
@@ -26,14 +27,19 @@ class TCPTunnelClientProxy extends EventEmitter {
     super();
 
     options.localPort = Number(options.localPort);
+    if (!options.localHost) options.localHost = '127.0.0.1';
     if (isNaN(options.localPort)) throw new Error(`invalid localPort: ${options.localPort}`);
     options.remotePort = Number(options.remotePort);
     if (isNaN(options.remotePort)) throw new Error(`invalid remotePort: ${options.remotePort}`);
     if (!options.remoteHost) throw new Error(`missing remoteHost`);
 
+    this.localPort = options.localPort;
+    this.localHost = options.localHost;
+    this.remotePort = options.remotePort;
+    this.remoteHost = options.remoteHost;
 
     // connect to local port first
-    this.local = net.connect(options.localPort, '127.0.0.1', _ => {
+    this.local = net.connect(options.localPort, options.localHost, _ => {
       debug('connection{localPort=%s} connected', options.localPort);
       this.local.isConnected = true;
       this.emit('local connect', this.local);

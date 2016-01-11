@@ -58,11 +58,24 @@ if (parseConfigResult.error.length > 0) utils.die(`parse config file error:\n${p
 const config = parseConfigResult.config;
 
 
+function convertRuleToPorts(rule) {
+  return Object.keys(rule).map(port => {
+    return {
+      port: Number(port),
+      target: {
+        host: rule[port].client,
+        port: Number(rule[port].port),
+      }
+    };
+  });
+}
+
 const clientOptions = {
   host: config.value.server,
   port: config.value.serverPort,
   name: config.value.name,
   password: config.value.password,
+  mapPorts: convertRuleToPorts(config.rule),
 };
 let connectrdOnStartup = false;
 let client = null;
@@ -100,8 +113,8 @@ function initClient(exit) {
     logger.info('message from server: %s', msg);
   });
 
-  client.on('new session', (localPort, remotePort) => {
-    logger.log('new session: %s:%s <=> %s:%s', '127.0.0.1', localPort, clientOptions.host, remotePort);
+  client.on('new session', (p) => {
+    logger.log('new session: %s:%s <=> %s:%s', p.localHost, p.localPort, p.remoteHost, p.remotePort);
   });
 
   client.on('proxy local connect', p => {

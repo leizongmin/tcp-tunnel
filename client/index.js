@@ -24,6 +24,7 @@ class TCPTunnelClient extends EventEmitter {
    *   - {String} name
    *   - {String} password
    *   - {Number} heartbeat
+   *   - {Object} mapPorts, format: [{port: localPort, target: {host: host, port: port}}, ...]
    */
   constructor(options) {
     super();
@@ -39,6 +40,13 @@ class TCPTunnelClient extends EventEmitter {
 
     if (!options.name) throw new Error(`missing name`);
     if (!options.password) throw new Error(`missing password`);
+
+    this._mapPorts = new Map();
+    if (options.mapPorts) {
+      for (const item of options.mapPorts) {
+        this._mapPorts.set(item.port, item.target);
+      }
+    }
 
     this._server = socket.createClient({
       host: options.host,
@@ -100,8 +108,11 @@ class TCPTunnelClient extends EventEmitter {
         debug('new session: session=%s, localPort=%s, remotePort=%s', d.session, d.localPort, d.remotePort);
 
         // setup proxy
+        const proxyLocalInfo = this._mapPorts.get(d.localPort) || {};
+        proxyLocalInfo.port = proxyLocalInfo.port || d.localPort;
         const proxy = new TCPTunnelClientProxy({
-          localPort: d.localPort,
+          localPort: proxyLocalInfo.port,
+          localHost: proxyLocalInfo.host,
           remotePort: d.remotePort,
           remoteHost: options.host,
         });
@@ -124,7 +135,7 @@ class TCPTunnelClient extends EventEmitter {
           this._server.send(utils.signJSON(options.password, {
             method: 'close_session',
             session: d.session,
-            message: `cannot connect to local port ${d.localPort}`,
+            message: `cannot connect to local port ${proxyLocalInfo.port}`,
           }));
         });
 
@@ -140,7 +151,7 @@ class TCPTunnelClient extends EventEmitter {
           this.emit('proxy remote error', proxy, err);
         });
 
-        this.emit('new session', d.localPort, d.remotePort);
+        this.emit('new session', proxy);
 
         this._proxyConnections++;
         proxy.once('destroy', _ => {
