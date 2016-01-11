@@ -21,54 +21,45 @@
 [download-image]: https://img.shields.io/npm/dm/tcp-tunnel.svg?style=flat-square
 [download-url]: https://npmjs.org/package/tcp-tunnel
 
+[中文版文档](README.zh.md)
+
 # tcp-tunnel
 
-+ 快速建立TCP隧道，方便将服务器上的端口映射到内网主机
-+ 支持多客户端及密码认证
-+ 客户端只需要配置连接密码即可，端口映射关系由服务器管理
-+ 服务器支持热更新配置
+TCP tunnel server & client, multi-user support
 
 
-## 安装
+## Installation
 
-**要求系统已安装`Node.js v4.0`或以上版本**
+**required `Node.js v4.0` or later version**
 
 ```bash
 $ npm install tcp-tunnel -g
 ```
 
-## 原理
+## Configuration
 
-+ 服务器端启动，监听配置的端口列表
-+ 客户端连接到服务器，校验密码，建立控制连接通道
-+ 服务器端监听到连接请求，生成`session_id`并发送给相应的客户端
-+ 客户端收到`session_id`后，连接服务器端，并发送此`session_id`验证
-+ 建立反向连接成功，服务器将接收到的数据发送给客户端，并将客户端发送过来的数据发送出去
-
-## 配置
-
-服务器端配置文件`server.conf`：
+Server side configuration file `server.conf`：
 
 ```
 # 服务器配置
 :value
 port = 5000
 
-# 客户端名称及密码
-# 名称:密码
+# clients
+# name:password
 :client
 A:123456
 B:123456
 
-# 转发规则
-# 本地端口 -> 客户端:端口
+# rules
+# serverPort -> clientName:port
 :rule
 2022 -> A:22
 3306 -> A:3306
 6379 -> B:6379
 ```
 
-客户端配置文件`client.conf`：
+Client side configuration file `client.conf`：
 
 ```
 :value
@@ -77,26 +68,26 @@ password = 123456
 server = 192.168.9.10
 serverPort = 5000
 
-# 本地端口映射
-# 原端口 -> 目标地址:端口
+# mapping port
+# sourcePort -> targetHost:port
 :rule
 3306 -> 192.168.99.100:3306
 6379 -> 192.168.99.100:6379
 ```
 
-## 启动客户端
+## Start client
 
 ```bash
 $ ttclient -c client.conf
 ```
 
-## 启动服务端
+## Start server
 
 ```bash
 $ ttserver -c server.conf
 ```
 
-如果更改了配置项中的`:client`和`:rule`部分，可在执行时添加`-r`选项重新加载配置（热更新，服务进程不重启）：
+If you have change the configuration item `:client` or `:rule`, you can pass additional argument `-r` to start the server, the runing server will just reload the newest configuration (not restart process):
 
 ```bash
 $ ttserver -c server.conf -r
