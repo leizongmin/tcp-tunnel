@@ -32,6 +32,6 @@
     "commander": "^2.9.0",
     "debug": "^2.2.0",
     "lei-utils": "^3.0.1",
-    "tracer": "^0.8.2"
+    "tracer": "^0.8.5"
   }
 }
