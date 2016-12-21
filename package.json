@@ -30,7 +30,7 @@
     "cli-color": "^1.1.0",
     "clouds-socket": "^0.2.0-beta-5",
     "commander": "^2.9.0",
-    "debug": "^2.2.0",
+    "debug": "^2.5.1",
     "lei-utils": "^3.0.1",
     "tracer": "^0.8.5"
   }
