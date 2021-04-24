@@ -59,7 +59,7 @@ if (parseConfigResult.error.length > 0) utils.die(`parse config file error:\n${p
 const config = parseConfigResult.config;
 
 
-const pidFile = path.resolve(os.tmpDir(), `ttclient-${config.value.server}-${config.value.serverPort}.pid`);
+const pidFile = path.resolve(os.tmpdir(), `ttclient-${config.value.server}-${config.value.serverPort}.pid`);
 fs.writeFileSync(pidFile, process.pid.toString());
 logger.info('PID save to file %s', pidFile);
 

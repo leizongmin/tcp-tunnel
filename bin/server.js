@@ -66,7 +66,7 @@ if (parseConfigResult.error.length > 0) utils.die(`parse config file error:\n${p
 const config = parseConfigResult.config;
 
 
-const pidFile = path.resolve(os.tmpDir(), `ttserver-port-${config.value.port}.pid`);
+const pidFile = path.resolve(os.tmpdir(), `ttserver-port-${config.value.port}.pid`);
 if (program.reload) {
   if (!fs.existsSync(pidFile)) {
     logger.error('PID file does not exists, please make sure ttserver is running');
